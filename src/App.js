@@ -59,59 +59,89 @@ const options = {
 const App = () => {
   const [data, setData] = useState(genData());
   const [randomData, setRandomData] = useState(rand(20))
+  const [indices, setIndices] = useState({idx:0,i:0,j:0})
+  const [merging, setMerging] = useState([])
+  const [mergers, setMergers] = useState([])
+
+
+  
+  useEffect(() => {
+    setRandomData(rand(20))
+  }, []);
 
   useEffect(() => {
-    const labels = randomData.map((datum, i) => `${i+1}`)
-    
-    setData(genData(randomData.flat(), labels))
+    if (randomData.length === 1){
+      return
+    }
+    const { idx, i, j } = indices
 
-    const interval = setInterval(() => {
-      console.log(randomData)
-      let merges = []
-      for(let idx = 0; idx < randomData.length; idx+=2){
-        let frst = randomData[idx]
-        if (idx + 1 === randomData.length) {
-          merges.push(frst)
-          break
-        }
-        let scnd = randomData[idx+1]
+    if (idx >= randomData.length)
+      return
 
-        let i = 0
-        let j = 0
-        let merged = []
-        while (i < frst.length || j < scnd.length){
-          if (i < frst.length && 
-            (j === scnd.length || frst[i] <= scnd[j])){
-              merged.push(frst[i])
-              i++
-          } else {
-              merged.push(scnd[j])
-              j++
-          }
-        }
-        merges.push(merged)
-      }
-      setRandomData(merges)
-    }, 3000)
+    let frst = randomData[idx]
+    let scnd = idx+1 === randomData.length ? [] : randomData[idx+1]
+    console.log(mergers, merging, frst, scnd, randomData)
+    let data = mergers.flat()
+                .concat(merging)
+                .concat(frst.slice(i))
+                .concat(scnd.slice(j))
+                .concat(randomData.slice(idx+2).flat())
+    let labels =  data.map((datum, i) => `${i+1}-[${datum}]`)
+
+    setData(genData(data, labels))  
+  }, [indices, randomData])
+
+  const mergeSort = () => {
+    let { idx, i, j } = indices
     
-    if(randomData.length === 1){
-      // break
-      clearInterval(interval)
-      
+    if (idx >= randomData.length) {
+      setIndices({idx:0,i:0,j:0})
+      setRandomData(mergers)
+      setMergers([])
+      // clearInterval(interval)
+      return
     }
 
-    // const interval = setInterval(() => setData(genData(random_data, labels)), 5000);
+    let frst = randomData[idx]
+    if (idx + 1 === randomData.length){
+      i = frst.length
+      setIndices({ idx: idx+2, i:0, j:0})
+      setMergers([...mergers, frst])
+      return
+    }
+    let scnd = randomData[idx+1] || []
 
-    // return () => clearInterval(interval);
-  }, [randomData]);
+    if (i < frst.length || j < scnd.length) {
+      if (i < frst.length && 
+        (j === scnd.length || frst[i] <= scnd[j])){
+          setMerging([...merging, frst[i]]);
+          setIndices({...indices, i: i+1})
+      } else {
+          setMerging([...merging, scnd[j]])
+          setIndices({...indices, j: j+1})
+      }
+    } else {
+        setIndices({ idx: idx+2, i:0, j:0})
+        setMergers([...mergers, merging])
+        setMerging([])
+    }
+  }
+
+  // useEffect(() => {
+  //   setTimeout(() => mergeSort(), 3000);
+  // }, [indices])  
 
   return (
     <>
       <div className='header'>
-        <h1 className='title'>App Bar Chart</h1>
-        
-          
-        
+        <h1 className='title' onClick={e => mergeSort()}>
+          App Bar Chart 
+          <span> {indices.idx}</span>
+          <span> {indices.i}</span>
+          <span> {indices.j}</span>
+          <span> [{mergers.map((n, i) => <span key={i}>{n},</span>)}]</span>
+          <span> [{merging.map((n, i) => <span key={i}>{n},</span>)}]</span>
+        </h1>
       </div>
       <Bar data={data} options={options} />
     </>
