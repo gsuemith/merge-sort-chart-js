@@ -127,9 +127,9 @@ const App = () => {
     }
   }
 
-  // useEffect(() => {
-  //   setTimeout(() => mergeSort(), 3000);
-  // }, [indices])  
+  useEffect(() => {
+    setTimeout(() => mergeSort(), 3000);
+  }, [indices])  
 
   return (
     <>
